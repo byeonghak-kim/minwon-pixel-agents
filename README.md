@@ -8,6 +8,14 @@
 ![WebSocket](https://img.shields.io/badge/WebSocket-Realtime%20Events-orange)
 ![Public Repo](https://img.shields.io/badge/GitHub-Public-black?logo=github)
 
+<p align="center">
+  <img src="docs/images/minwon-pixel-agents-demo.png" alt="민원 처리 Multi-Agent Pixel Agents 동작 화면" width="900">
+</p>
+
+<p align="center">
+  <b>Pixel Agents 원본 맵 UI 위에서 분류·검색·작성·검수 Agent가 순차적으로 민원 처리 상태를 표시하는 화면</b>
+</p>
+
 이 프로젝트는 민원 1건을 입력받아 4개의 Agent가 순차적으로 처리하는 구조를 구현합니다.
 
 - **분류 Agent**: 민원 유형, 핵심 쟁점, 긴급도, 처리 방향 분석
