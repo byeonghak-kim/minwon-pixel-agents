@@ -75,6 +75,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
 
   registerHealthRoute(app);
   registerHookRoute(app, options);
+  registerMinwonEventRoute(app, options);
   registerWebSocketRoute(app, options);
 
   // ── Listen ──────────────────────────────────────────────────
@@ -124,6 +125,79 @@ function registerHookRoute(app: FastifyInstance, options: HttpServerOptions): vo
         options.onHookEvent?.(providerId, event);
       }
 
+      reply.send('ok');
+    },
+  );
+}
+
+// ── Minwon Pipeline Events ───────────────────────────────────
+//
+// This endpoint is intentionally small: it does not replace the original
+// Pixel Agents UI. It injects minwon pipeline events into the existing
+// AgentStateStore/WebSocket pipeline so the original map, characters,
+// animations, and overlays are reused.
+
+function registerMinwonEventRoute(app: FastifyInstance, options: HttpServerOptions): void {
+  app.post<{
+    Body: Record<string, unknown>;
+  }>(
+    '/api/minwon/events',
+    {
+      preHandler: bearerAuth(options.token),
+    },
+    async (request, reply) => {
+      const msg = request.body;
+      const type = msg.type;
+
+      if (type === 'agentCreated') {
+        const id = Number(msg.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          reply.code(400).send('invalid agent id');
+          return;
+        }
+
+        if (!options.store.has(id)) {
+          const now = Date.now();
+          options.store.set(id, {
+            id,
+            sessionId: typeof msg.sessionId === 'string' ? msg.sessionId : `minwon-agent-${id}`,
+            isExternal: true,
+            projectDir: process.cwd(),
+            jsonlFile: '',
+            fileOffset: 0,
+            lineBuffer: '',
+            activeToolIds: new Set<string>(),
+            activeToolStatuses: new Map<string, string>(),
+            activeToolNames: new Map<string, string>(),
+            activeSubagentToolIds: new Map<string, Set<string>>(),
+            activeSubagentToolNames: new Map<string, Map<string, string>>(),
+            backgroundAgentToolIds: new Set<string>(),
+            isWaiting: false,
+            permissionSent: false,
+            hadToolsInTurn: false,
+            folderName: typeof msg.folderName === 'string' ? msg.folderName : '민원 처리',
+            lastDataAt: now,
+            linesProcessed: 0,
+            seenUnknownRecordTypes: new Set<string>(),
+            hookDelivered: true,
+            hooksOnly: true,
+            providerId: 'minwon',
+            inputTokens: 0,
+            outputTokens: 0,
+            agentName: typeof msg.agentName === 'string' ? msg.agentName : undefined,
+          });
+        }
+
+        reply.send('ok');
+        return;
+      }
+
+      if (typeof type !== 'string') {
+        reply.code(400).send('missing event type');
+        return;
+      }
+
+      options.store.broadcast(msg);
       reply.send('ok');
     },
   );

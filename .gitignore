@@ -28,7 +28,8 @@ allure-report/
 *.map
 
 # Environment files
-.env*
+.env
+.env.*
 !.env.example
 
 # Project-specific
@@ -50,3 +51,11 @@ agent-orchestrator.yaml
 .ao/
 .serena/
 tasks/
+
+# Minwon pipeline runtime outputs
+runs/*.json
+runs/*.md
+!runs/.gitkeep
+
+# Local diff dumps
+_diff_*.txt
